@@ -1,0 +1,1 @@
+Epoch   1/300 | Train Loss: 147.898543 | Val Loss: 71.315320 | Train MAE: 14800.80 | Val MAE: 7175.05 | Train RMSE: 20744.98 | Val RMSE: 42340.95 | Best RMSE: 42340.95 | 60.9s

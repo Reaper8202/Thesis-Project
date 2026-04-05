@@ -1,0 +1,28 @@
+/opt/miniconda3/lib/python3.12/site-packages/torch/optim/lr_scheduler.py:62: UserWarning: The verbose parameter is deprecated. Please use get_last_lr() to access the learning rate.
+  warnings.warn(
+Using device: mps
+
+=== Loading and preprocessing data ===
+
+Successfully loaded: 1507 image-annotation pairs
+Skipped (no matching CSV or error): ['img_006']
+Using stratified split (by count quartile).
+Split: 1054 train / 226 val / 227 test
+
+=== Building model ===
+
+U-Net parameters: 7,762,465
+Sample image shape: torch.Size([1, 256, 256])
+Sample density map shape: torch.Size([1, 256, 256])
+Sample density map sum: 13.00 (GT count: 13)
+
+=== Starting training ===
+
+
+============================================================
+Training on mps
+Train samples: 1054, Val samples: 226
+Batch size: 16, LR: 0.0001
+============================================================
+
+Epoch   1/300 | Train Loss: 147.898543 | Val Loss: 71.315320 | Train MAE: 14800.80 | Val MAE: 7175.05 | Train RMSE: 20744.98 | Val RMSE: 42340.95 | Best RMSE: 42340.95 | 60.9s

@@ -73,7 +73,7 @@ annotations_dir = os.path.join(dataset_dir, "annotations")
 os.makedirs(images_dir, exist_ok=True)
 os.makedirs(annotations_dir, exist_ok=True)
 
-num_images = 1500
+num_images = 3000
 print(f"Generating {num_images} synthetic Quantum Dot images...")
 
 for i in range(num_images):

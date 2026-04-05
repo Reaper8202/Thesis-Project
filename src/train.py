@@ -80,7 +80,7 @@ def train_model(
     # num_workers=0 on macOS: worker processes re-import all modules on spawn
     # (Mac default) which is prohibitively slow with heavy packages like deeptrack.
     # pin_memory only helps with CUDA DMA transfers.
-    _workers = 0 if device.type == 'mps' else 4
+    _workers = 0 if device.type == 'mps' else min(4, (os.cpu_count() or 4) // 2)
     _pin = device.type == 'cuda'
     _persist = _workers > 0
     train_loader = DataLoader(

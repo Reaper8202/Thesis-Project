@@ -43,16 +43,14 @@ def main():
     parser.add_argument('--image', type=str, default=None,
                         help='Single image path for predict mode')
     parser.add_argument('--target_size', type=int, default=256)
-    parser.add_argument('--sigma', type=float, default=3.0,
-                        help='Gaussian sigma for density maps')
+    parser.add_argument('--mask_radius', type=int, default=5,
+                        help='Dot disk radius in pixels for binary mask (default: 5)')
+    parser.add_argument('--pos_weight', type=float, default=10.0,
+                        help='CrossEntropyLoss weight for dot class vs background (default: 10)')
     parser.add_argument('--batch_size', type=int, default=8)
     parser.add_argument('--epochs', type=int, default=200)
     parser.add_argument('--lr', type=float, default=1e-4)
     parser.add_argument('--patience', type=int, default=30)
-    parser.add_argument('--count_weight', type=float, default=1.0,
-                        help='Weight for count-head MAE loss (default: 1.0)')
-    parser.add_argument('--dot_weight', type=float, default=100.0,
-                        help='Weight multiplier for dot pixels in MSE loss (default: 100)')
     parser.add_argument('--seed', type=int, default=42,
                         help='Random seed for reproducibility')
     parser.add_argument('--compile', action='store_true',
@@ -178,23 +176,23 @@ def main():
     print(f"Split: {len(train_data)} train / {len(val_data)} val / {len(test_data)} test")
 
     # Create PyTorch datasets
-    train_dataset = QuantumDotDataset(train_data, sigma=args.sigma, augment=True)
-    val_dataset = QuantumDotDataset(val_data, sigma=args.sigma, augment=False)
-    test_dataset = QuantumDotDataset(test_data, sigma=args.sigma, augment=False)
+    train_dataset = QuantumDotDataset(train_data, mask_radius=args.mask_radius, augment=True)
+    val_dataset   = QuantumDotDataset(val_data,   mask_radius=args.mask_radius, augment=False)
+    test_dataset  = QuantumDotDataset(test_data,  mask_radius=args.mask_radius, augment=False)
 
     # ============================================================
     # MODE: TRAIN
     # ============================================================
     if args.mode == 'train':
         print("\n=== Building model ===\n")
-        model = UNet(in_channels=1, out_channels=1, base_filters=32)
+        model = UNet(in_channels=1, out_channels=2, base_filters=32)
         print(f"U-Net parameters: {count_parameters(model):,}")
 
         # Quick sanity check
-        sample_img, sample_dm, sample_count = train_dataset[0]
+        sample_img, sample_mask, sample_count = train_dataset[0]
         print(f"Sample image shape: {sample_img.shape}")
-        print(f"Sample density map shape: {sample_dm.shape}")
-        print(f"Sample density map sum: {sample_dm.sum().item():.2f} (GT count: {sample_count.item():.0f})")
+        print(f"Sample mask shape:  {sample_mask.shape}  dtype={sample_mask.dtype}")
+        print(f"Dot pixels: {(sample_mask == 1).sum().item()}  GT count: {sample_count.item():.0f}")
 
         print("\n=== Starting training ===\n")
         model, history = train_model(
@@ -206,8 +204,8 @@ def main():
             num_epochs=args.epochs,
             batch_size=args.batch_size,
             learning_rate=args.lr,
-            count_loss_weight=args.count_weight,
-            dot_weight=args.dot_weight,
+            pos_weight=args.pos_weight,
+            mask_radius=args.mask_radius,
             patience=args.patience,
             compile_model=args.compile,
             use_plateau_scheduler=args.plateau_scheduler,
@@ -215,16 +213,17 @@ def main():
 
         # Evaluate on test set
         print("\n=== Evaluating on test set ===\n")
-        results = evaluate_model(model, test_dataset, device, output_dir=args.output_dir)
+        results = evaluate_model(model, test_dataset, device,
+                                 output_dir=args.output_dir,
+                                 mask_radius=args.mask_radius)
 
         # Visualize predictions on test set
         print("\n=== Saving test predictions ===\n")
         pred_dir = Path(args.output_dir) / 'test_predictions'
         pred_dir.mkdir(parents=True, exist_ok=True)
 
-        for i, sample in enumerate(test_data[:10]):  # First 10 test images
-            img_name = sample['name']
-            # Find the original image file
+        for i, sample in enumerate(test_data[:10]):
+            img_name   = sample['name']
             images_dir = Path(args.images_dir)
             for ext in ['.png', '.jpg', '.jpeg', '.tif', '.tiff', '.bmp']:
                 img_path = images_dir / f"{img_name}{ext}"
@@ -232,7 +231,8 @@ def main():
                     predict_and_visualize(
                         model, img_path, device,
                         save_path=pred_dir / f'{img_name}_pred.png',
-                        gt_count=sample['count']
+                        gt_count=sample['count'],
+                        mask_radius=args.mask_radius,
                     )
                     break
 
@@ -246,7 +246,9 @@ def main():
             return
 
         model = load_trained_model(model_path, device)
-        results = evaluate_model(model, test_dataset, device, output_dir=args.output_dir)
+        results = evaluate_model(model, test_dataset, device,
+                                 output_dir=args.output_dir,
+                                 mask_radius=args.mask_radius)
 
 
 if __name__ == '__main__':

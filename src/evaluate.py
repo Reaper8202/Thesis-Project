@@ -2,6 +2,7 @@
 Evaluation metrics and test set analysis.
 """
 
+import os
 import numpy as np
 import torch
 from torch.utils.data import DataLoader
@@ -30,8 +31,11 @@ def evaluate_model(model, test_dataset, device, output_dir='outputs', batch_size
     output_dir.mkdir(parents=True, exist_ok=True)
 
     model.eval()
+    _workers = min(4, (os.cpu_count() or 4) // 2)
+    _pin = str(device).startswith('cuda')
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False,
-                             num_workers=4, persistent_workers=True, pin_memory=True)
+                             num_workers=_workers, persistent_workers=_workers > 0,
+                             pin_memory=_pin)
 
     all_pred_counts = []
     all_gt_counts = []
@@ -39,9 +43,9 @@ def evaluate_model(model, test_dataset, device, output_dir='outputs', batch_size
     with torch.no_grad():
         for images, density_maps, counts in test_loader:
             images = images.to(device)
-            predictions = model(images)
+            _, count_preds = model(images)   # use count head, not density sum
 
-            pred_counts = predictions.sum(dim=(1, 2, 3)).cpu().numpy()
+            pred_counts = count_preds.cpu().numpy()
             gt_counts = counts.numpy()
 
             all_pred_counts.extend(pred_counts)

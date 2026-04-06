@@ -49,8 +49,8 @@ def main():
     parser.add_argument('--epochs', type=int, default=200)
     parser.add_argument('--lr', type=float, default=1e-4)
     parser.add_argument('--patience', type=int, default=30)
-    parser.add_argument('--count_weight', type=float, default=0.01,
-                        help='Weight for count MAE term in loss (default: 0.01)')
+    parser.add_argument('--count_weight', type=float, default=1.0,
+                        help='Weight for count-head MAE loss (default: 1.0)')
     parser.add_argument('--dot_weight', type=float, default=100.0,
                         help='Weight multiplier for dot pixels in MSE loss (default: 100)')
     parser.add_argument('--seed', type=int, default=42,

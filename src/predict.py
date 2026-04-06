@@ -39,10 +39,10 @@ def predict_single_image(model, image_path, device, target_size=(256, 256)):
 
     # Predict
     with torch.no_grad():
-        density_map = model(image_tensor)
+        density_map_tensor, count_tensor = model(image_tensor)
 
-    density_map = density_map.squeeze().cpu().numpy()   # (H, W)
-    predicted_count = density_map.sum()
+    density_map = density_map_tensor.squeeze().cpu().numpy()  # (H, W)
+    predicted_count = count_tensor.item()                     # use count head
 
     return predicted_count, density_map, image
 

@@ -20,7 +20,7 @@ def _resample_layout():
     y0 = np.random.randint(0, IMAGE_SIZE - region_size + 1)
     pos_state.update({"x0": x0, "y0": y0,
                       "x1": x0 + region_size, "y1": y0 + region_size})
-    count_state["n"] = np.random.randint(1, 101)  # 1–100 dots
+    count_state["n"] = np.random.randint(1, 41)   # 1–40 dots
 
 # 1. Optics — fixed to a realistic widefield fluorescence microscope.
 # Narrow ranges so the model sees a consistent PSF across all images.

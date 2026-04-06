@@ -8,6 +8,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
+from skimage import measure
 import matplotlib.pyplot as plt
 from pathlib import Path
 
@@ -42,18 +43,20 @@ def evaluate_model(model, test_dataset, device, output_dir='outputs',
         num_workers=_workers, persistent_workers=_workers > 0, pin_memory=_pin,
     )
 
-    dot_area = math.pi * mask_radius ** 2
-
     all_pred_counts = []
     all_gt_counts   = []
 
     with torch.no_grad():
         for images, masks, counts in test_loader:
             images = images.to(device)
-            logits = model(images)                          # (B, 2, H, W)
-            probs  = F.softmax(logits, dim=1)              # (B, 2, H, W)
-            pred_counts = (probs[:, 1].sum(dim=(1, 2)) / dot_area).cpu().numpy()
-            all_pred_counts.extend(pred_counts)
+            logits = model(images)                                   # (B, 2, H, W)
+            probs  = F.softmax(logits, dim=1)                       # (B, 2, H, W)
+            binary = (probs[:, 1] > 0.5).cpu().numpy()              # (B, H, W)
+
+            # Connected-component counting — same method as DeepTrack2 tutorial
+            for b in range(binary.shape[0]):
+                labeled = measure.label(binary[b])
+                all_pred_counts.append(float(labeled.max()))
             all_gt_counts.extend(counts.numpy())
 
     all_pred_counts = np.array(all_pred_counts)

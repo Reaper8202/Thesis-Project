@@ -25,14 +25,17 @@ def logits_to_counts(logits, mask_radius):
     """
     Derive dot count from segmentation logits.
 
-    sum(P(dot)) / dot_area  handles overlapping dots gracefully —
-    each dot contributes its area of probability mass regardless of
-    whether it overlaps a neighbour.
+    Threshold at P(dot) > 0.5, then divide by dot disk area.
+    Thresholding avoids the background-bleed problem: raw probability
+    sum amplifies any residual background probability across 65k pixels
+    into huge count errors during early training. Connected-component
+    counting is used at final evaluation (evaluate.py); this fast
+    threshold approach is used only for per-epoch metric tracking.
     """
-    probs = torch.softmax(logits, dim=1)     # (B, 2, H, W)
-    dot_probs = probs[:, 1]                   # (B, H, W)
+    probs    = torch.softmax(logits, dim=1)          # (B, 2, H, W)
+    positive = (probs[:, 1] > 0.5).float()           # (B, H, W)
     dot_area = math.pi * mask_radius ** 2
-    return dot_probs.sum(dim=(1, 2)) / dot_area   # (B,)
+    return positive.sum(dim=(1, 2)) / dot_area        # (B,)
 
 
 def train_model(

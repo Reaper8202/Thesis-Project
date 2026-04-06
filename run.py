@@ -43,10 +43,10 @@ def main():
     parser.add_argument('--image', type=str, default=None,
                         help='Single image path for predict mode')
     parser.add_argument('--target_size', type=int, default=256)
-    parser.add_argument('--mask_radius', type=int, default=5,
-                        help='Dot disk radius in pixels for binary mask (default: 5)')
-    parser.add_argument('--pos_weight', type=float, default=10.0,
-                        help='CrossEntropyLoss weight for dot class vs background (default: 10)')
+    parser.add_argument('--mask_radius', type=int, default=8,
+                        help='Dot disk radius in pixels for binary mask (default: 8)')
+    parser.add_argument('--pos_weight', type=float, default=15.0,
+                        help='CrossEntropyLoss weight for dot class vs background (default: 15)')
     parser.add_argument('--batch_size', type=int, default=8)
     parser.add_argument('--epochs', type=int, default=200)
     parser.add_argument('--lr', type=float, default=1e-4)
